@@ -1,0 +1,4 @@
+---
+depends:
+ - name: linux-baseline
+   url: https://github.com/dev-sec/linux-baseline/archive/master.tar.gz

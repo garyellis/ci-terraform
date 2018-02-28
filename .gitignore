@@ -1,0 +1,3 @@
+test/integration/fixtures/default/.kitchen
+test/integration/fixtures/default/.terraform.tfstate
+test/integration/fixtures/default/Gemfile.lock
