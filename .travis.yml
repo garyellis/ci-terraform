@@ -1,0 +1,31 @@
+sudo: required
+
+services:
+  - docker
+
+language: ruby
+
+install:
+  - gem install inspec
+  - inspec --version
+
+script:
+  - docker build -t $DOCKER_USERNAME/$DOCKER_REPO .
+  - export container="$(docker run --rm -d -v $TRAVIS_BUILD_DIR/test/integration/fixtures/default:/opt/default -t $DOCKER_USERNAME/$DOCKER_REPO)"
+  # skipping controls now returns 101 -> https://github.com/chef/inspec/pull/2487/commits/81ebfb1e66de2db12cced1b6d028e8fefd56b164
+  - inspec exec ./test/integration/default -t docker://$container || if [ "$?" -ne "101" ]; then exit 1; fi
+
+after_success:
+  - test $TRAVIS_BRANCH = "master" && test $TRAVIS_PULL_REQUEST &&
+    docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD" &&
+    docker push $DOCKER_USERNAME/$DOCKER_REPO
+
+env:
+  global:
+    - DOCKER_USERNAME=garyellis
+    - DOCKER_REPO=ci-terraform
+    - secure: jUFqJ2dIEUHO3qMOVGtCZMelforPgfXLul6ZpnYmk2z1zk1pxXI5DvHbxu+vfl/Gl4OTk5/g/HYiEkp4R/egntR/EPcjhekmTfhD3Prctt6/27Lpm7HSeqOAPGAywZeAspht0QQuOF1HJ95tB0yyNreFohD3GJLylNtQe//JUT70tPVdFEzbksdLOP6OQu6M7A0eZRKFEsjg0EUhWmqCrTcK/Kyl2PYbiNwUG0xlPl8344gGriK4QzVTRmH+TNuj7nz/xu4cdZ52SVD+f5j42NrPP58bRLesOoPluU0QRvH1xds86ysywxF4ZmTktEpaQ6LzF5NkXvT1QriP3rv4qJXffE2bBf/QNbrcAtH8NcKaPOHV5eYOgYmfOGWImm7QqW9tcwRf/zvitbOoQHxlLg3/2z+tjRrF1KhBWB33nrUWCOqKNAmsuV2rgDj+q01onuAMNqAa1ApL8lV3bnKCD2Vu0QQlcz3zxx8Lmj89tFfJnK1BSMJ2oWNQtUavu5BXbJm6HWcuroZxEA+TPz7iNLClwncQ28Oz/zYVb0Wa7MgiyEzNmF7UtqxgDpYEwrC0XQUAMMJxlbTJeg4dUImdJ33oqmG3+qE6bpqe/yZjGObgS4MRl80ls3AUBO0tZpt6znOSBHHBA/ILnuxnT4cDsTp/1odzIUq/h9QEKeWm758=
+
+notifications:
+  slack:
+    secure: kK/l5yaXTnNHwJEmmUe2D+vs+Fey25ozO6juWX5i+kJP4S5B44aoWWqmAZVCYaqHT4Fd/B0eI8QABhD+VUnarDYebz2O+XnsDBA1gTcjNmcF/0mDBxZ7p/rXO6IYK22I5VZXvShs1nm/ADqpbrk6vlECBIS0q6g8Zy/Uj1B9FXvrj4OhGMU7NBo6/9gqCumS3/dgQw1ER4uq81kCsVQEQ7Ha+tQisE5kbAgwEY/i/NnQ3u68V6zwyU4fuwYpZ6ZkSbXKCnerVFbybNURflf77O6luDXDNdWgumaS+DI1zffuZbp083R9CcUtNiP7Ocupud3tBOf8/uzszsFFzmw8hoqWnBGj4nnuRgNkPlSy+XpOQeA276ptrVRSDtKjBQsGtP1/7qXj9syE/QwFhc2i5oACW/QZQM2UWGQ9EwcUURZ68JBanPdSbGMANjj9ghyyOh7SFKFI3Xw3oTa/mmC9P+lSjOBqqaiYWL1ky5J4LKKHjmm4GeC+gMLljOSloqYnizp4iIWvyFug11RnTf374/edCh0K85uTEIaitrTS3WKD8cxyQvoy7bgl5hhTSwaooL/AXD1e7n8E/nPEmSrLu6U1Y05fjjYNMFfrWkoHIpmdA3G7IWeqFAmnYUAO0eKEVvuzOK5ANbPsOke0dbG8R4UoxypzSHbBfaZsPaJ/X4c=
