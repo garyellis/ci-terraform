@@ -20,10 +20,13 @@ RUN yum -y install \
     bison \
     curl \
     sqlite-devel \
-    unzip  && \
+    unzip \
+    which && \
     yum clean all
 
 ENV RUBY_VERSION=2.4.3
+#ENV RBENV_REPO=https://github.com/rbenv/rbenv.git
+#ENV RBENV_RUBY_BUILD_REPO=https://github.com/rbenv/ruby-build.git
 RUN git clone https://github.com/rbenv/rbenv.git ~/.rbenv && \
     echo 'export PATH="$HOME/.rbenv/bin:$PATH"' >> ~/.bash_profile && \
     echo 'eval "$(rbenv init -)"' >> ~/.bash_profile && \
@@ -34,9 +37,21 @@ RUN git clone https://github.com/rbenv/rbenv.git ~/.rbenv && \
     rbenv global $RUBY_VERSION && \
     gem install bundler && gem env home
 
-ENV TERRAFORM_VERSION=0.11.3
-RUN curl -RO https://releases.hashicorp.com/terraform/$TERRAFORM_VERSION/terraform_${TERRAFORM_VERSION}_linux_amd64.zip && \
-    unzip terraform_${TERRAFORM_VERSION}_linux_amd64.zip -d /usr/local/bin && rm -f *.zip && \
-    terraform version
 
-ENTRYPOINT ["/bin/bash", "-c", "source ~/.bash_profile && /bin/bash"]
+ENV TF_VERSIONS="0.8.7 0.11.3 0.11.6"
+#ENV TFENV_REPO=https://github.com/kamatama41/tfenv.git
+RUN git clone https://github.com/kamatama41/tfenv.git ~/.tfenv && \
+    echo 'export PATH="$HOME/.tfenv/bin:$PATH"' >> ~/.bash_profile && \
+    ln -s ~/.tfenv/bin/* /usr/local/bin && \
+    for i in $TF_VERSIONS ; do tfenv install $i; done
+
+ENV IUS_REPO=https://centos7.iuscommunity.org/ius-release.rpm
+RUN yum -y install $IUS_REPO && \
+    yum -y install \
+    python36u \
+    python36u-pip \
+    python36u-devel && \
+    python3.6 -m venv /venv && \
+    echo '. /venv/bin/activate' >> ~/.bash_profile
+
+CMD ["/bin/bash", "-c", "source ~/.bash_profile && /bin/bash"]
